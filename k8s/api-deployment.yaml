@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: ecociente-api
+  namespace: ecociente
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: ecociente-api
+
+  template:
+    metadata:
+      labels:
+        app: ecociente-api
+
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+
+          command:
+            - sh
+            - -c
+            - >
+              until nc -z postgres-service 5432;
+              do
+                echo "Aguardando PostgreSQL...";
+                sleep 2;
+              done;
+              echo "PostgreSQL disponível.";
+
+      containers:
+        - name: ecociente-api
+
+          image: ecociente/ecociente:1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 9801
+
+          envFrom:
+            - configMapRef:
+                name: ecociente-config
+
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ecociente-secret
+                  key: DB_USERNAME
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecociente-secret
+                  key: DB_PASSWORD
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ecociente-secret
+                  key: JWT_SECRET
+
+          startupProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 20
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
