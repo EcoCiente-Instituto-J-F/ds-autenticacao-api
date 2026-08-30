@@ -1,61 +1,17 @@
 services:
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: ecociente-postgres
-
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-    volumes:
-      - ecociente-postgres-data:/var/lib/postgresql/data
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-    restart: unless-stopped
-
-
-  ecociente-api:
+  autenticacao-api:
     build:
       context: .
       dockerfile: Dockerfile
 
-    image: ecociente:1.0.0
-    container_name: ecociente-api
+    image: ecociente-autenticacao:1.0.0
+    container_name: ecociente-autenticacao-api
 
     ports:
       - "9801:9801"
 
-    environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      DB_USERNAME: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-
-      PORT: 9801
-
-      DDL_AUTO: update
-      SHOW_SQL: "false"
-      SQL_INIT_MODE: never
-
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES}
-
-    depends_on:
-      postgres:
-        condition: service_healthy
+    env_file:
+      - .env
 
     restart: unless-stopped
-
-
-volumes:
-  ecociente-postgres-data:

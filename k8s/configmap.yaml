@@ -2,16 +2,21 @@ apiVersion: v1
 kind: ConfigMap
 
 metadata:
-  name: ecociente-config
+  name: autenticacao-config
   namespace: ecociente
 
 data:
-  DB_URL: "jdbc:postgresql://postgres-service:5432/ecociente"
-
   PORT: "9801"
 
   DDL_AUTO: "update"
   SHOW_SQL: "false"
   SQL_INIT_MODE: "never"
 
-  JWT_EXPIRATION_MINUTES: "120"
+  JWT_EXPIRATION_MS: "300000"
+
+  # Pool de conexoes PostgreSQL
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+  SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "10000"
+  SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT: "60000"
+  SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: "600000"

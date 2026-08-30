@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: ecociente-api
+  name: autenticacao-api
   namespace: ecociente
 
 spec:
@@ -10,33 +10,18 @@ spec:
 
   selector:
     matchLabels:
-      app: ecociente-api
+      app: autenticacao-api
 
   template:
     metadata:
       labels:
-        app: ecociente-api
+        app: autenticacao-api
 
     spec:
-      initContainers:
-        - name: wait-for-postgres
-          image: busybox:1.36
-
-          command:
-            - sh
-            - -c
-            - >
-              until nc -z postgres-service 5432;
-              do
-                echo "Aguardando PostgreSQL...";
-                sleep 2;
-              done;
-              echo "PostgreSQL disponível.";
-
       containers:
-        - name: ecociente-api
+        - name: autenticacao-api
 
-          image: ecociente/ecociente:1.0.0
+          image: ecociente/ecociente:autenticacao-1.0.0
           imagePullPolicy: Always
 
           ports:
@@ -44,26 +29,10 @@ spec:
 
           envFrom:
             - configMapRef:
-                name: ecociente-config
+                name: autenticacao-config
 
-          env:
-            - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: ecociente-secret
-                  key: DB_USERNAME
-
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ecociente-secret
-                  key: DB_PASSWORD
-
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: ecociente-secret
-                  key: JWT_SECRET
+            - secretRef:
+                name: autenticacao-secret
 
           startupProbe:
             tcpSocket:

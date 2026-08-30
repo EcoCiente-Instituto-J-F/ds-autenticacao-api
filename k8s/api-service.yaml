@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: ecociente-api-service
+  name: autenticacao-api-service
   namespace: ecociente
 
 spec:
   selector:
-    app: ecociente-api
+    app: autenticacao-api
 
   ports:
     - protocol: TCP
