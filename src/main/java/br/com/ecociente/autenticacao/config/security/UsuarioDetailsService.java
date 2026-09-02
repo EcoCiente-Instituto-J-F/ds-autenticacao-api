@@ -9,27 +9,27 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import br.com.ecociente.autenticacao.core.gateway.UsuarioGateway;
 import br.com.ecociente.autenticacao.core.service.UsuarioPerfilService;
-import br.com.ecociente.autenticacao.dataprovider.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioDetailsService implements UserDetailsService {
 
-  private final UsuarioRepository usuarioRepository;
+  private final UsuarioGateway usuarioGateway;
   private final UsuarioPerfilService usuarioPerfilService;
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    var usuario = usuarioRepository.findByEmailIgnoreCase(username)
+    var usuario = usuarioGateway.buscarPorEmail(username)
         .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
-    var perfil = usuarioPerfilService.resolverPerfil(usuario);
+    var perfil = usuarioPerfilService.perfil(usuario);
 
     return User.builder()
         .username(usuario.getEmail())
         .password(usuario.getSenhaHash())
-        .disabled(Boolean.FALSE.equals(usuario.getStatus()))
+        .disabled(Boolean.FALSE.equals(usuario.getAtivo()))
         .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + perfil.name())))
         .build();
   }
