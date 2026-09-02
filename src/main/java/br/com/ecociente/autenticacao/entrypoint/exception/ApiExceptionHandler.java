@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import br.com.ecociente.autenticacao.core.exception.RecursoNaoEncontradoException;
 import br.com.ecociente.autenticacao.core.exception.RegraNegocioException;
 import br.com.ecociente.autenticacao.entrypoint.dto.ErrorResponse;
+import br.com.ecociente.autenticacao.entrypoint.dto.ValidationError;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -19,33 +20,64 @@ public class ApiExceptionHandler {
   @ExceptionHandler(RegraNegocioException.class)
   ResponseEntity<ErrorResponse> handleRegraNegocio(RegraNegocioException exception) {
     return ResponseEntity.badRequest()
-        .body(ErrorResponse(400, "REGRA_NEGOCIO", exception.getMessage()));
+        .body(ErrorResponse.builder()
+            .status(400)
+            .codigoError("REGRA_NEGOCIO")
+            .details(List.of(ValidationError.builder()
+                .message(exception.getMessage())
+                .build()))
+            .build());
   }
 
   @ExceptionHandler(RecursoNaoEncontradoException.class)
   ResponseEntity<ErrorResponse> handleNaoEncontrado(RecursoNaoEncontradoException exception) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
-        .body(ErrorResponse.of(404, "RECURSO_NAO_ENCONTRADO", exception.getMessage()));
+        .body(ErrorResponse.builder()
+            .status(404)
+            .codigoError("RECURSO_NAO_ENCONTRADO")
+            .details(List.of(ValidationError.builder()
+                .message(exception.getMessage())
+                .build()))
+            .build());
   }
 
   @ExceptionHandler(BadCredentialsException.class)
   ResponseEntity<ErrorResponse> handleBadCredentials() {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        .body(ErrorResponse.of(401, "CREDENCIAIS_INVALIDAS", "E-mail ou senha invalidos"));
+        .body(ErrorResponse.builder()
+            .status(401)
+            .codigoError("CREDENCIAIS_INVALIDAS")
+            .details(List.of(ValidationError.builder()
+                .message("E-mail ou senha inválidos")
+                .build()))
+            .build());
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
-    List<ErrorResponse.FieldError> erros = exception.getBindingResult().getFieldErrors().stream()
-        .map(fe -> ErrorResponse.FieldError.of(fe.getField(), fe.getDefaultMessage()))
+    List<ValidationError> erros = exception.getBindingResult().getFieldErrors().stream()
+        .map(fe -> ValidationError.builder()
+            .field(fe.getField())
+            .message(fe.getDefaultMessage())
+            .build())
         .toList();
     return ResponseEntity.badRequest()
-        .body(new ErrorResponse(400, "VALIDACAO", erros));
+        .body(ErrorResponse.builder()
+            .status(400)
+            .codigoError("VALIDACAO")
+            .details(erros)
+            .build());
   }
 
   @ExceptionHandler(Exception.class)
   ResponseEntity<ErrorResponse> handleGenerico(Exception exception) {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ErrorResponse.of(500, "ERRO_INTERNO", "Erro interno do servidor"));
+        .body(ErrorResponse.builder()
+            .status(500)
+            .codigoError("ERRO_INTERNO")
+            .details(List.of(ValidationError.builder()
+                .message("Erro interno do servidor")
+                .build()))
+            .build());
   }
 }

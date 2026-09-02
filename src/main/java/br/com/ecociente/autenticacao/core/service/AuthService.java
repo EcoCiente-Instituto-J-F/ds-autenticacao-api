@@ -10,6 +10,7 @@ import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
 import br.com.ecociente.autenticacao.core.domain.SessaoAutenticada;
 import br.com.ecociente.autenticacao.core.domain.Usuario;
 import br.com.ecociente.autenticacao.core.domain.UsuarioCredenciais;
+import br.com.ecociente.autenticacao.core.exception.RecursoNaoEncontradoException;
 import br.com.ecociente.autenticacao.core.gateway.AutenticacaoGateway;
 import br.com.ecociente.autenticacao.core.gateway.UsuarioGateway;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class AuthService {
       new UsernamePasswordAuthenticationToken(credenciais.getEmail(), credenciais.getSenha()));
 
       Usuario usuario = usuarioGateway.buscarPorEmail(credenciais.getEmail())
-      .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+      .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
       PerfilUsuarioType perfil = usuarioPerfilService.perfil(usuario);
 
       String token = jwtService.gerarToken(usuario, perfil);
