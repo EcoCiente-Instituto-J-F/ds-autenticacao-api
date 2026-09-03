@@ -13,7 +13,7 @@ public class UsuarioMapper {
       entity.getNome(),
       entity.getEmail(),
       entity.getSenhaHash(),
-      entity.getStatus(),
+      entity.getAtivo(),
       entity.getTipoUsuario().toString()
     );
   }

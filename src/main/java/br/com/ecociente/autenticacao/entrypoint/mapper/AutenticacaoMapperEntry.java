@@ -7,21 +7,31 @@ import br.com.ecociente.autenticacao.core.domain.UsuarioCredenciais;
 import br.com.ecociente.autenticacao.entrypoint.dto.request.LoginRequestDto;
 import br.com.ecociente.autenticacao.entrypoint.dto.response.AuthResponseDto;
 
-@Component 
+@Component
 public class AutenticacaoMapperEntry {
-  public UsuarioCredenciais toDomain(LoginRequestDto requestDto){
-    return new UsuarioCredenciais(requestDto.email(), requestDto.senha());
+
+  public UsuarioCredenciais toDomain(LoginRequestDto requestDto) {
+    if (requestDto == null) {
+      return null;
+    }
+
+    return new UsuarioCredenciais(
+        requestDto.email(),
+        requestDto.senha());
   }
-  
-  public AuthResponseDto toResponse(SessaoAutenticada sessao){
+
+  public AuthResponseDto toResponse(SessaoAutenticada sessao) {
+    if (sessao == null) {
+      return null;
+    }
+
     return new AuthResponseDto(
-      sessao.getToken(),
-      sessao.getTipoToken(),
-      sessao.getExpiraEm().longValue(),
-      sessao.getUsuarioId(),
-      sessao.getNome(),
-      sessao.getEmail(),
-      sessao.getPerfil()
-    );
+        sessao.getToken(),
+        sessao.getTipoToken(),
+        sessao.getExpiraEm().longValue(),
+        sessao.getUsuarioId(),
+        sessao.getNome(),
+        sessao.getEmail(),
+        sessao.getPerfil());
   }
 }

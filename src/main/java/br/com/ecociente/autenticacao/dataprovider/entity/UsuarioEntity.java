@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_usuario")
+@Table(name = "tb_usuarios")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,26 +29,26 @@ public class UsuarioEntity {
   @Column(name = "id_usuario", nullable = false)
   private Integer id;
 
-  @Column(name = "nome", nullable = false)
+  @Column(name = "nome_usuario", nullable = false, length = 100)
   private String nome;
 
-  @Column(name = "email", nullable = false)
+  @Column(name = "email_usuario", nullable = false, length = 255)
   private String email;
 
-  @Column(name = "senha_hash", nullable = false)
+  @Column(name = "senha_hash", nullable = false, length = 255)
   private String senhaHash;
 
-  @Column(name = "data_cadastro")
-  private OffsetDateTime dataCadastro;
+  @Column (name = "registro_em", nullable = false, updatable = false)
+  private OffsetDateTime registroEm;
 
-  @Column(name = "status")
-  private Boolean status;
+  @Column(name = "ativo", nullable = false)
+  private Boolean ativo;
 
-  @Column (name = "id_endereco", nullable = false, insertable = false, updatable = false)
-  private Integer endereco;
+  @Column(name = "endereco_id", nullable = false, insertable = false, updatable = false)
+  private Integer enderecoId;;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "id_tipo_usuario", nullable = false)
+  @JoinColumn(name = "tipo_usuario_id", nullable = false)
   private TipoUsuarioEntity tipoUsuario;
 
 }

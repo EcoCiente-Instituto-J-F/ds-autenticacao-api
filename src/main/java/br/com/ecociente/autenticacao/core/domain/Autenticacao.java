@@ -18,7 +18,5 @@ public class Autenticacao {
   String tipoToken;
   OffsetDateTime criadoEm;
   Integer expiradoEm;
-  // PerfilUsuarioType perfil;
-  // String nome;
-  // String email;
+  
 }
