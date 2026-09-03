@@ -20,18 +20,19 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
   private final SecretKey secretKey;
-  private final Long expirationMinutes;
+  private final Long expirationMs;
 
   public JwtService(
       @Value("${app.security.jwt.secret}") String secret,
-      @Value("${app.security.jwt.expiration-minutes}") Long expirationMinutes) {
+      @Value("${app.security.jwt.expiration-ms}") Long expirationMs) {
+
     this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    this.expirationMinutes = expirationMinutes;
+    this.expirationMs = expirationMs;
   }
 
   public String gerarToken(Usuario usuario, PerfilUsuarioType perfil) {
     Instant agora = Instant.now();
-    Instant expiracao = agora.plusSeconds(getExpirationSeconds());
+    Instant expiracao = agora.plusMillis(expirationMs);
 
     return Jwts.builder()
         .subject(usuario.getEmail())
@@ -51,11 +52,13 @@ public class JwtService {
 
   public boolean isTokenValido(String token, String email) {
     Claims claims = extrairClaims(token);
-    return claims.getSubject().equalsIgnoreCase(email) && claims.getExpiration().after(new Date());
+
+    return claims.getSubject().equalsIgnoreCase(email)
+        && claims.getExpiration().after(new Date());
   }
 
   public Long getExpirationSeconds() {
-    return expirationMinutes * 60;
+    return expirationMs / 1000;
   }
 
   private Claims extrairClaims(String token) {
