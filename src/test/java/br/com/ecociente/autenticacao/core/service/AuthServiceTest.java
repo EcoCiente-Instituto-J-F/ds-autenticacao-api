@@ -1,181 +1,155 @@
 package br.com.ecociente.autenticacao.core.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import br.com.ecociente.autenticacao.config.security.JwtService;
+import br.com.ecociente.autenticacao.core.domain.Autenticacao;
 import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
+import br.com.ecociente.autenticacao.core.domain.SessaoAutenticada;
+import br.com.ecociente.autenticacao.core.domain.Usuario;
+import br.com.ecociente.autenticacao.core.domain.UsuarioCredenciais;
 import br.com.ecociente.autenticacao.core.exception.RecursoNaoEncontradoException;
-import br.com.ecociente.autenticacao.core.exception.RegraNegocioException;
-import br.com.ecociente.autenticacao.dataprovider.entity.TipoUsuarioEntity;
-import br.com.ecociente.autenticacao.dataprovider.entity.UsuarioEntity;
-import br.com.ecociente.autenticacao.dataprovider.repository.CooperativaRepository;
-import br.com.ecociente.autenticacao.dataprovider.repository.EnderecoRepository;
-import br.com.ecociente.autenticacao.dataprovider.repository.SindicoRepository;
-import br.com.ecociente.autenticacao.dataprovider.repository.TelefoneRepository;
-import br.com.ecociente.autenticacao.dataprovider.repository.TipoUsuarioRepository;
-import br.com.ecociente.autenticacao.dataprovider.repository.UsuarioRepository;
-import br.com.ecociente.autenticacao.entrypoint.dto.request.CadastroUsuarioRequestDto;
-import br.com.ecociente.autenticacao.entrypoint.dto.request.LoginRequestDto;
+import br.com.ecociente.autenticacao.core.gateway.AutenticacaoGateway;
+import br.com.ecociente.autenticacao.core.gateway.UsuarioGateway;
 
-@Tag("unit")
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
   @Mock
   private AuthenticationManager authenticationManager;
-  @Mock
-  private PasswordEncoder passwordEncoder;
+
   @Mock
   private JwtService jwtService;
+
   @Mock
   private UsuarioPerfilService usuarioPerfilService;
-  @Mock
-  private UsuarioRepository usuarioRepository;
-  @Mock
-  private TipoUsuarioRepository tipoUsuarioRepository;
-  @Mock
-  private CooperativaRepository cooperativaRepository;
-  @Mock
-  private SindicoRepository sindicoRepository;
-  @Mock
-  private TelefoneRepository telefoneRepository;
-  @Mock
-  private EnderecoRepository enderecoRepository;
-  @Mock
-  private IdGeneratorService idGeneratorService;
 
+  @Mock
+  private UsuarioGateway usuarioGateway;
+
+  @Mock
+  private AutenticacaoGateway autenticacaoGateway;
+
+  @InjectMocks
   private AuthService authService;
 
-  private static final CadastroUsuarioRequestDto REQUEST_VALIDO = new CadastroUsuarioRequestDto(
-      "Usuario Teste", "usuario@teste.com", "SenhaValida123!", "SenhaValida123!",
-      PerfilUsuarioType.USUARIO_COMUM, "11999998888",
-      "01001000", "SP", "Sao Paulo", "Centro", "Rua das Flores", "123", "Apto 101");
+  private Usuario usuario;
+  private UsuarioCredenciais credenciais;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthService(
-        authenticationManager, passwordEncoder, jwtService, usuarioPerfilService,
-        usuarioRepository, tipoUsuarioRepository, cooperativaRepository, sindicoRepository,
-        telefoneRepository, enderecoRepository, idGeneratorService);
+    usuario = new Usuario(
+        1,
+        "Emanuelly Mendes",
+        "emanuelly@gmail.com",
+        "$2a$10$hash",
+        true,
+        "morador");
+
+    credenciais = new UsuarioCredenciais(
+        "emanuelly@gmail.com",
+        "Senha@T3ste");
   }
 
-  @Test
-  void deveCadastrarUsuarioComumComSucesso() {
-    when(usuarioRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-    when(idGeneratorService.proximoId(anyString(), anyString())).thenReturn(1);
-    when(passwordEncoder.encode(anyString())).thenReturn("hash-fake");
-    when(enderecoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-    when(tipoUsuarioRepository.findByNomesNormalizados(any()))
-        .thenReturn(List.of(TipoUsuarioEntity.builder().id(1).nomeTipo("Comum").build()));
-    when(usuarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-    when(jwtService.gerarToken(any(), any())).thenReturn("token-fake");
-    when(jwtService.getExpirationSeconds()).thenReturn(7200L);
+  @Nested
+  @DisplayName("login")
+  class Login {
 
-    var response = authService.cadastrarUsuario(REQUEST_VALIDO);
+    @Test
+    @DisplayName("Deve autenticar e retornar sessão com token quando credenciais válidas")
+    void shouldAuthenticateAndReturnSessionWhenCredentialsValid() {
+      Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
+      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+          .thenReturn(authentication);
+      when(usuarioGateway.buscarPorEmail("emanuelly@gmail.com"))
+          .thenReturn(Optional.of(usuario));
+      when(usuarioPerfilService.perfil(usuario))
+          .thenReturn(PerfilUsuarioType.MORADOR);
+      when(jwtService.gerarToken(usuario, PerfilUsuarioType.MORADOR))
+          .thenReturn("token-jwt-abc");
+      when(jwtService.getExpirationSeconds())
+          .thenReturn(3600L);
+      when(autenticacaoGateway.salvar(any(Autenticacao.class)))
+          .thenReturn(new Autenticacao(1, 1, "token-jwt-abc", "bearer", null, 3600));
 
-    assertThat(response.token()).isEqualTo("token-fake");
-    assertThat(response.perfil()).isEqualTo(PerfilUsuarioType.USUARIO_COMUM);
-    verify(telefoneRepository).save(any());
+      SessaoAutenticada sessao = authService.login(credenciais);
+
+      assertNotNull(sessao);
+      assertEquals("token-jwt-abc", sessao.getToken());
+      assertEquals("Bearer", sessao.getTipoToken());
+      assertEquals(3600L, sessao.getExpiraEm().longValue());
+      assertEquals(1, sessao.getUsuarioId());
+      assertEquals("Emanuelly Mendes", sessao.getNome());
+      assertEquals("emanuelly@gmail.com", sessao.getEmail());
+      assertEquals(PerfilUsuarioType.MORADOR, sessao.getPerfil());
+
+      verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+      verify(usuarioGateway).buscarPorEmail("emanuelly@gmail.com");
+      verify(autenticacaoGateway).salvar(any(Autenticacao.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar BadCredentialsException quando senha estiver errada")
+    void shouldThrowBadCredentialsWhenPasswordWrong() {
+      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+          .thenThrow(new BadCredentialsException("Credenciais inválidas"));
+
+      assertThrows(BadCredentialsException.class,
+          () -> authService.login(credenciais));
+
+      verify(usuarioGateway, never()).buscarPorEmail(anyString());
+      verify(autenticacaoGateway, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar RecursoNaoEncontradoException quando usuário não existir")
+    void shouldThrowNotFoundWhenUserNotExists() {
+      Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
+      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+          .thenReturn(authentication);
+      when(usuarioGateway.buscarPorEmail("emanuelly@gmail.com"))
+          .thenReturn(Optional.empty());
+
+      RecursoNaoEncontradoException ex = assertThrows(RecursoNaoEncontradoException.class,
+          () -> authService.login(credenciais));
+
+      assertEquals("Usuário não encontrado", ex.getMessage());
+      verify(autenticacaoGateway, never()).salvar(any());
+    }
+
+    @Test
+    @DisplayName("Deve propagar a exceção quando authenticationManager falhar inesperadamente")
+    void shouldPropagateExceptionWhenAuthManagerFailsUnexpectedly() {
+      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+          .thenThrow(new RuntimeException("falha interna"));
+
+      assertThrows(RuntimeException.class,
+          () -> authService.login(credenciais));
+
+      verify(usuarioGateway, never()).buscarPorEmail(anyString());
+      verify(autenticacaoGateway, never()).salvar(any());
+    }
   }
-
-  @Test
-  void naoDeveCadastrarComEmailJaExistente() {
-    when(usuarioRepository.existsByEmailIgnoreCase(anyString())).thenReturn(true);
-
-    assertThatThrownBy(() -> authService.cadastrarUsuario(REQUEST_VALIDO))
-        .isInstanceOf(RegraNegocioException.class)
-        .hasMessageContaining("E-mail ja cadastrado");
-
-    verify(usuarioRepository, never()).save(any());
-  }
-
-  @Test
-  void naoDeveCadastrarComSenhasDiferentes() {
-    var requestSenhaDiferente = new CadastroUsuarioRequestDto(
-        "Usuario Teste", "usuario@teste.com", "SenhaValida123!", "SenhaDiferente123!",
-        PerfilUsuarioType.USUARIO_COMUM, "11999998888",
-        "01001000", "SP", "Sao Paulo", "Centro", "Rua das Flores", "123", "Apto 101");
-
-    assertThatThrownBy(() -> authService.cadastrarUsuario(requestSenhaDiferente))
-        .isInstanceOf(RegraNegocioException.class)
-        .hasMessageContaining("nao conferem");
-
-    verify(usuarioRepository, never()).existsByEmailIgnoreCase(anyString());
-  }
-
-  @Test
-  void naoDeveCadastrarComoSindicoOuCooperativaPeloEndpointComum() {
-    var requestSindico = new CadastroUsuarioRequestDto(
-        "Usuario Teste", "usuario@teste.com", "SenhaValida123!", "SenhaValida123!",
-        PerfilUsuarioType.SINDICO, "11999998888",
-        "01001000", "SP", "Sao Paulo", "Centro", "Rua das Flores", "123", "Apto 101");
-    when(usuarioRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-
-    assertThatThrownBy(() -> authService.cadastrarUsuario(requestSindico))
-        .isInstanceOf(RegraNegocioException.class);
-  }
-
-  @Test
-  void naoDeveCadastrarQuandoTipoDeUsuarioNaoEstaConfiguradoNoBanco() {
-    when(usuarioRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-    when(idGeneratorService.proximoId(anyString(), anyString())).thenReturn(1);
-    when(enderecoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-    when(tipoUsuarioRepository.findByNomesNormalizados(any())).thenReturn(List.of());
-    when(tipoUsuarioRepository.findAll()).thenReturn(List.of());
-
-    assertThatThrownBy(() -> authService.cadastrarUsuario(REQUEST_VALIDO))
-        .isInstanceOf(RegraNegocioException.class)
-        .hasMessageContaining("Tipo de usuario nao configurado");
-  }
-
-  @Test
-  void deveFazerLoginComSucesso() {
-    var usuario = UsuarioEntity.builder().id(1).nome("Usuario Teste").email("usuario@teste.com").build();
-    when(usuarioRepository.findByEmailIgnoreCase("usuario@teste.com")).thenReturn(Optional.of(usuario));
-    when(usuarioPerfilService.resolverPerfil(usuario)).thenReturn(PerfilUsuarioType.USUARIO_COMUM);
-    when(jwtService.gerarToken(any(), any())).thenReturn("token-fake");
-    when(jwtService.getExpirationSeconds()).thenReturn(7200L);
-
-    var response = authService.login(new LoginRequestDto("usuario@teste.com", "SenhaValida123!"));
-
-    assertThat(response.token()).isEqualTo("token-fake");
-    assertThat(response.perfil()).isEqualTo(PerfilUsuarioType.USUARIO_COMUM);
-  }
-
-  @Test
-  void devePropagarCredenciaisInvalidasNoLogin() {
-    org.mockito.Mockito.doThrow(new BadCredentialsException("invalido"))
-        .when(authenticationManager).authenticate(any());
-
-    assertThatThrownBy(() -> authService.login(new LoginRequestDto("usuario@teste.com", "SenhaErrada123!")))
-        .isInstanceOf(BadCredentialsException.class);
-  }
-
-  @Test
-  void naoDeveSolicitarRecuperacaoParaEmailInexistente() {
-    when(usuarioRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
-
-    assertThatThrownBy(() -> authService.solicitarRecuperacaoSenha(
-        new br.com.ecociente.autenticacao.entrypoint.dto.request.RecuperacaoSenhaRequestDto("nao.existe@teste.com")))
-        .isInstanceOf(RecursoNaoEncontradoException.class);
-  }
-}
+}  

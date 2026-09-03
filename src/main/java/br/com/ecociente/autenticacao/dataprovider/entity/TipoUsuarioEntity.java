@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tipo_usuario")
+@Table(name = "tb_lkp_tipos_usuarios")
 @Getter
 @Setter
 @NoArgsConstructor

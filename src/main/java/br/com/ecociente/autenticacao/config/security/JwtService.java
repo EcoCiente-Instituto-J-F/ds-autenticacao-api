@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
-import br.com.ecociente.autenticacao.dataprovider.entity.UsuarioEntity;
+import br.com.ecociente.autenticacao.core.domain.Usuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -30,7 +30,7 @@ public class JwtService {
     this.expirationMs = expirationMs;
   }
 
-  public String gerarToken(UsuarioEntity usuario, PerfilUsuarioType perfil) {
+  public String gerarToken(Usuario usuario, PerfilUsuarioType perfil) {
     Instant agora = Instant.now();
     Instant expiracao = agora.plusMillis(expirationMs);
 

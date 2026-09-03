@@ -2,7 +2,6 @@ package br.com.ecociente.autenticacao.dataprovider.entity;
 
 import java.time.OffsetDateTime;
 
-import org.springframework.data.domain.Persistable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,10 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PostLoad;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,62 +17,38 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "usuario")
+@Table(name = "tb_usuarios")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioEntity implements Persistable<Integer> {
+public class UsuarioEntity {
 
   @Id
   @Column(name = "id_usuario", nullable = false)
   private Integer id;
 
-  @Column(name = "nome", nullable = false)
+  @Column(name = "nome_usuario", nullable = false, length = 100)
   private String nome;
 
-  @Column(name = "email", nullable = false)
+  @Column(name = "email_usuario", nullable = false, length = 255)
   private String email;
 
-  @Column(name = "senha_hash", nullable = false)
+  @Column(name = "senha_hash", nullable = false, length = 255)
   private String senhaHash;
 
-  @Column(name = "data_cadastro")
-  private OffsetDateTime dataCadastro;
+  @Column (name = "registro_em", nullable = false, updatable = false)
+  private OffsetDateTime registroEm;
 
-  @Column(name = "status")
-  private Boolean status;
+  @Column(name = "ativo", nullable = false)
+  private Boolean ativo;
+
+  @Column(name = "endereco_id", nullable = false, insertable = false, updatable = false)
+  private Integer enderecoId;;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "id_endereco", nullable = false)
-  private EnderecoEntity endereco;
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "id_tipo_usuario", nullable = false)
+  @JoinColumn(name = "tipo_usuario_id", nullable = false)
   private TipoUsuarioEntity tipoUsuario;
 
-  @Transient
-  @Builder.Default
-  private boolean novoRegistro = true;
-
-  @Override
-  public boolean isNew() {
-    return novoRegistro;
-  }
-
-  @PostLoad
-  void marcarComoExistente() {
-    novoRegistro = false;
-  }
-
-  @PrePersist
-  void prePersist() {
-    if (status == null) {
-      status = true;
-    }
-    if (dataCadastro == null) {
-      dataCadastro = OffsetDateTime.now();
-    }
-  }
 }
