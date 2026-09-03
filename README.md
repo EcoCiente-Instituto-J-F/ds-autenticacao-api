@@ -28,3 +28,5 @@ Porta padrao: `9801`.
 - `POST /auth/ativar-sindico`
 - `POST /auth/esqueci-senha`
 - `POST /auth/resetar-senha`
+
+teste pr automatica 
