@@ -33,7 +33,7 @@ public class AuthController {
     description = "Endpoint pata realizar o login e autenticação de usuários na plataforma com base no seu email e senha."
   )
   @ApiResponses ({
-    @ApiResponse (responseCode = "201", description = "Login realizado com sucesso"),
+    @ApiResponse (responseCode = "200", description = "Login realizado com sucesso"),
     @ApiResponse (responseCode = "400", description = "Dados inválidos")
   })
   public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto request) {

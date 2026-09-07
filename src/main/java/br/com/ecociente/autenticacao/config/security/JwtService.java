@@ -12,12 +12,14 @@ import org.springframework.stereotype.Service;
 
 import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
 import br.com.ecociente.autenticacao.core.domain.Usuario;
+import br.com.ecociente.autenticacao.core.gateway.TokenProvaiderPort;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
 @Service
-public class JwtService {
+public class JwtService implements TokenProvaiderPort {
 
   private final SecretKey secretKey;
   private final Long expirationMs;
@@ -30,9 +32,10 @@ public class JwtService {
     this.expirationMs = expirationMs;
   }
 
+  @Override 
   public String gerarToken(Usuario usuario, PerfilUsuarioType perfil) {
     Instant agora = Instant.now();
-    Instant expiracao = agora.plusMillis(expirationMs);
+    Instant expiracao = agora.plusMillis(expirationMinutes);
 
     return Jwts.builder()
         .subject(usuario.getEmail())
@@ -45,7 +48,6 @@ public class JwtService {
         .signWith(secretKey)
         .compact();
   }
-
   public String extrairEmail(String token) {
     return extrairClaims(token).getSubject();
   }
@@ -57,8 +59,9 @@ public class JwtService {
         && claims.getExpiration().after(new Date());
   }
 
-  public Long getExpirationSeconds() {
-    return expirationMs / 1000;
+  @Override 
+  public Long getExpiracaoSegundos() {
+    return expirationMinutes/1000;
   }
 
   private Claims extrairClaims(String token) {
@@ -68,4 +71,17 @@ public class JwtService {
         .parseSignedClaims(token)
         .getPayload();
   }
+
+  public Claims extrairTodosClaims(String token){
+    return extrairClaims(token);
+  }
+
+  public boolean isTokenValido(String token) {
+    try {
+        Claims claims = extrairClaims(token);
+        return claims.getExpiration().after(new Date());
+    } catch (JwtException e) {
+        return false;
+    }
+}
 }
