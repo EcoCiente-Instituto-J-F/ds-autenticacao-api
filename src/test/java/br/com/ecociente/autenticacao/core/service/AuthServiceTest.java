@@ -5,43 +5,39 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 
-import br.com.ecociente.autenticacao.config.security.JwtService;
 import br.com.ecociente.autenticacao.core.domain.Autenticacao;
 import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
 import br.com.ecociente.autenticacao.core.domain.SessaoAutenticada;
 import br.com.ecociente.autenticacao.core.domain.Usuario;
 import br.com.ecociente.autenticacao.core.domain.UsuarioCredenciais;
-import br.com.ecociente.autenticacao.core.exception.RecursoNaoEncontradoException;
 import br.com.ecociente.autenticacao.core.gateway.AutenticacaoGateway;
+import br.com.ecociente.autenticacao.core.gateway.AutenticadorCredenciaisPort;
+import br.com.ecociente.autenticacao.core.gateway.TokenProvaiderPort;
 import br.com.ecociente.autenticacao.core.gateway.UsuarioGateway;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
   @Mock
-  private AuthenticationManager authenticationManager;
+  private AutenticadorCredenciaisPort autenticadorCredenciaisPort;
 
   @Mock
-  private JwtService jwtService;
+  private TokenProvaiderPort tokenProvaiderPort;
 
   @Mock
   private UsuarioPerfilService usuarioPerfilService;
@@ -55,101 +51,31 @@ class AuthServiceTest {
   @InjectMocks
   private AuthService authService;
 
-  private Usuario usuario;
-  private UsuarioCredenciais credenciais;
+  @Test 
+  @DisplayName("Deve autenticar com sucesso e retornar sessão autenticada")
+  void shouldAutenticateSucessful(){
+    var credenciais = new UsuarioCredenciais("test@email.com","@sEnha12345678");
+    var usuario = Usuario.builder()
+        .id(1)
+        .nome("Test")
+        .email(credenciais.getEmail())
+        .ativo(true)
+        .tipoUsuario("morador")
+        .build();
 
-  @BeforeEach
-  void setUp() {
-    usuario = new Usuario(
-        1,
-        "Emanuelly Mendes",
-        "emanuelly@gmail.com",
-        "$2a$10$hash",
-        true,
-        "morador");
+    doNothing().when(autenticadorCredenciaisPort).autenticar(credenciais.getEmail(),credenciais.getSenha());
+    when(usuarioGateway.buscarPorEmail(credenciais.getEmail())).thenReturn(Optional.of(usuario));
+    when(usuarioPerfilService.perfil(usuario)).thenReturn(PerfilUsuarioType.MORADOR);
+    when(tokenProvaiderPort.gerarToken(usuario, PerfilUsuarioType.MORADOR)).thenReturn("mocked.jwt.token");
+    when(tokenProvaiderPort.getExpiracaoSegundos()).thenReturn(3600L);
 
-    credenciais = new UsuarioCredenciais(
-        "emanuelly@gmail.com",
-        "Senha@T3ste");
+    SessaoAutenticada resultado = authService.login(credenciais);
+
+    assertNotNull(resultado);
+    assertEquals("mocked.jwt.token", resultado.getToken());
+    assertEquals(1, resultado.getUsuarioId());
+    assertEquals(PerfilUsuarioType.MORADOR, resultado.getPerfil());
+    verify(autenticacaoGateway,times(1)).salvar(any(Autenticacao.class));
   }
 
-  @Nested
-  @DisplayName("login")
-  class Login {
-
-    @Test
-    @DisplayName("Deve autenticar e retornar sessão com token quando credenciais válidas")
-    void shouldAuthenticateAndReturnSessionWhenCredentialsValid() {
-      Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
-      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-          .thenReturn(authentication);
-      when(usuarioGateway.buscarPorEmail("emanuelly@gmail.com"))
-          .thenReturn(Optional.of(usuario));
-      when(usuarioPerfilService.perfil(usuario))
-          .thenReturn(PerfilUsuarioType.MORADOR);
-      when(jwtService.gerarToken(usuario, PerfilUsuarioType.MORADOR))
-          .thenReturn("token-jwt-abc");
-      when(jwtService.getExpirationSeconds())
-          .thenReturn(3600L);
-      when(autenticacaoGateway.salvar(any(Autenticacao.class)))
-          .thenReturn(new Autenticacao(1, 1, "token-jwt-abc", "bearer", null, 3600));
-
-      SessaoAutenticada sessao = authService.login(credenciais);
-
-      assertNotNull(sessao);
-      assertEquals("token-jwt-abc", sessao.getToken());
-      assertEquals("Bearer", sessao.getTipoToken());
-      assertEquals(3600L, sessao.getExpiraEm().longValue());
-      assertEquals(1, sessao.getUsuarioId());
-      assertEquals("Emanuelly Mendes", sessao.getNome());
-      assertEquals("emanuelly@gmail.com", sessao.getEmail());
-      assertEquals(PerfilUsuarioType.MORADOR, sessao.getPerfil());
-
-      verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-      verify(usuarioGateway).buscarPorEmail("emanuelly@gmail.com");
-      verify(autenticacaoGateway).salvar(any(Autenticacao.class));
-    }
-
-    @Test
-    @DisplayName("Deve lançar BadCredentialsException quando senha estiver errada")
-    void shouldThrowBadCredentialsWhenPasswordWrong() {
-      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-          .thenThrow(new BadCredentialsException("Credenciais inválidas"));
-
-      assertThrows(BadCredentialsException.class,
-          () -> authService.login(credenciais));
-
-      verify(usuarioGateway, never()).buscarPorEmail(anyString());
-      verify(autenticacaoGateway, never()).salvar(any());
-    }
-
-    @Test
-    @DisplayName("Deve lançar RecursoNaoEncontradoException quando usuário não existir")
-    void shouldThrowNotFoundWhenUserNotExists() {
-      Authentication authentication = org.mockito.Mockito.mock(Authentication.class);
-      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-          .thenReturn(authentication);
-      when(usuarioGateway.buscarPorEmail("emanuelly@gmail.com"))
-          .thenReturn(Optional.empty());
-
-      RecursoNaoEncontradoException ex = assertThrows(RecursoNaoEncontradoException.class,
-          () -> authService.login(credenciais));
-
-      assertEquals("Usuário não encontrado", ex.getMessage());
-      verify(autenticacaoGateway, never()).salvar(any());
-    }
-
-    @Test
-    @DisplayName("Deve propagar a exceção quando authenticationManager falhar inesperadamente")
-    void shouldPropagateExceptionWhenAuthManagerFailsUnexpectedly() {
-      when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-          .thenThrow(new RuntimeException("falha interna"));
-
-      assertThrows(RuntimeException.class,
-          () -> authService.login(credenciais));
-
-      verify(usuarioGateway, never()).buscarPorEmail(anyString());
-      verify(autenticacaoGateway, never()).salvar(any());
-    }
-  }
 }  

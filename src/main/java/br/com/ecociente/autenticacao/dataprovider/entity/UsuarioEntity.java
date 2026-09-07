@@ -45,7 +45,7 @@ public class UsuarioEntity {
   private Boolean ativo;
 
   @Column(name = "endereco_id", nullable = false, insertable = false, updatable = false)
-  private Integer enderecoId;;
+  private Integer enderecoId;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "tipo_usuario_id", nullable = false)
