@@ -1,0 +1,17 @@
+services:
+
+  autenticacao-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: ecociente-autenticacao:1.0.0
+    container_name: ecociente-autenticacao-api
+
+    ports:
+      - "9801:9801"
+
+    env_file:
+      - .env
+
+    restart: unless-stopped

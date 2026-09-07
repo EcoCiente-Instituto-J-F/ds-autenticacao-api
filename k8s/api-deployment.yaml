@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: autenticacao-api
+  namespace: ecociente
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: autenticacao-api
+
+  template:
+    metadata:
+      labels:
+        app: autenticacao-api
+
+    spec:
+      containers:
+        - name: autenticacao-api
+
+          image: ecociente/ecociente:autenticacao-1.0.0
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 9801
+
+          envFrom:
+            - configMapRef:
+                name: autenticacao-config
+
+            - secretRef:
+                name: autenticacao-secret
+
+          startupProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: 9801
+            periodSeconds: 20
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

@@ -22,13 +22,14 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService implements TokenProvaiderPort {
 
   private final SecretKey secretKey;
-  private final Long expirationMinutes;
+  private final Long expirationMs;
 
   public JwtService(
       @Value("${app.security.jwt.secret}") String secret,
-      @Value("${app.security.jwt.expiration-minutes}") Long expirationMinutes) {
+      @Value("${app.security.jwt.expiration-ms}") Long expirationMs) {
+
     this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-    this.expirationMinutes = expirationMinutes;
+    this.expirationMs = expirationMs;
   }
 
   @Override 
@@ -53,7 +54,9 @@ public class JwtService implements TokenProvaiderPort {
 
   public boolean isTokenValido(String token, String email) {
     Claims claims = extrairClaims(token);
-    return claims.getSubject().equalsIgnoreCase(email) && claims.getExpiration().after(new Date());
+
+    return claims.getSubject().equalsIgnoreCase(email)
+        && claims.getExpiration().after(new Date());
   }
 
   @Override 
