@@ -35,7 +35,7 @@ public class JwtService implements TokenProvaiderPort {
   @Override 
   public String gerarToken(Usuario usuario, PerfilUsuarioType perfil) {
     Instant agora = Instant.now();
-    Instant expiracao = agora.plusMillis(expirationMinutes);
+    Instant expiracao = agora.plusMillis(expirationMs);
 
     return Jwts.builder()
         .subject(usuario.getEmail())
@@ -61,7 +61,7 @@ public class JwtService implements TokenProvaiderPort {
 
   @Override 
   public Long getExpiracaoSegundos() {
-    return expirationMinutes/1000;
+    return expirationMs / 1000;
   }
 
   private Claims extrairClaims(String token) {
