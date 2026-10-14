@@ -14,7 +14,7 @@ public class UsuarioMapper {
       entity.getEmail(),
       entity.getSenhaHash(),
       entity.getAtivo(),
-      entity.getTipoUsuario().toString()
+      entity.getTipoUsuario().getNomeTipo()
     );
   }
   
