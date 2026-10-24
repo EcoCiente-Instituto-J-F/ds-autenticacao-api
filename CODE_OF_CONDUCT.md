@@ -36,7 +36,7 @@ Este Código de Conduta se aplica a todos os espaços da comunidade e também a 
 
 ## Aplicação
 
-Casos de comportamento abusivo, de assédio ou de outra forma inaceitável podem ser relatados aos líderes da comunidade responsáveis pela aplicação, pelo e-mail **ecociente.jef@gmail.com**. Todas as denúncias serão analisadas e investigadas de forma rápida e justa.
+Casos de comportamento abusivo, de assédio ou de outra forma inaceitável podem ser relatados aos líderes da comunidade responsáveis pela aplicação, pelo e-mail **<ecociente.jef@gmail.com>**. Todas as denúncias serão analisadas e investigadas de forma rápida e justa.
 
 Todos os líderes da comunidade são obrigados a respeitar a privacidade e a segurança de quem relatar um incidente.
 

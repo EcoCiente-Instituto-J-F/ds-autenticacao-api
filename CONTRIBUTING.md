@@ -10,10 +10,12 @@ Documentação, issues, Pull Requests e mensagens ao usuário em português do B
 
 1. Instale o JDK 19 e o Docker (os testes de integração usam Testcontainers com PostgreSQL).
 2. Clone o repositório:
+
    ```bash
    git clone https://github.com/EcoCiente-Instituto-J-F/ds-autenticacao-api.git
    cd ds-autenticacao-api
    ```
+
 3. Crie um `.env` a partir do `.env.example` (ignorado pelo Git) e ajuste os valores.
 4. Execute com `./gradlew bootRun` (Windows: `.\gradlew.bat bootRun`).
 

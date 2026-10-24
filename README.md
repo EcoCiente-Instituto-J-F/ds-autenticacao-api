@@ -15,10 +15,10 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/EcoCiente-Instituto-J-F/ds-autenticacao-api?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
-
 API responsavel por login, cadastro, recuperacao de senha, ativacao do sindico e JWT dos usuarios do EcoCiente.
 
 Perfis atendidos:
+
 - Usuario comum
 - Usuario residencial
 - Usuario comercial/industrial
@@ -28,6 +28,7 @@ Perfis atendidos:
 ## Configuracao
 
 Variaveis esperadas:
+
 - `DB_URL`
 - `DB_USER`
 - `DB_PASSWORD`
