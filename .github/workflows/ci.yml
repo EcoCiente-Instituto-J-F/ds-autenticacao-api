@@ -122,4 +122,5 @@ jobs:
       - name: Resumo
         env:
           IMAGE: ${{ steps.image.outputs.image }}
-        run: echo "Imagem publicada: $IMAGE"
+        run: |
+          echo "Imagem publicada: $IMAGE"
