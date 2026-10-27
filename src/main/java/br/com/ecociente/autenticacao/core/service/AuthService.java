@@ -36,7 +36,7 @@ public class AuthService {
         null,
         usuario.getId(),
         token,
-        "bearer",
+        "Bearer",
         null,
         expiracaoSegundos
       ));
