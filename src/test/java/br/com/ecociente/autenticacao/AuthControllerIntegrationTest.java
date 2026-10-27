@@ -95,7 +95,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.codigoError").value("VALIDACAO"));
   }
   @Test void naoDeveAceitarJsonInvalido() throws Exception {
-    mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON).content("{json invalido")))
+    mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON).content("{json invalido"))
        .andExpect(status().isBadRequest());
   }
 }
