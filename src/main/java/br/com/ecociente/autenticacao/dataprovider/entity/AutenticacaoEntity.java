@@ -25,6 +25,7 @@ public class AutenticacaoEntity {
 
   @Id
   @GeneratedValue (strategy = GenerationType.IDENTITY)
+  @Column(name = "id_autenticao_api")
   private Integer id;
 
   @Column (name = "usuario_id", nullable = false)
@@ -39,7 +40,7 @@ public class AutenticacaoEntity {
   @Column (name = "criado_em",nullable = false)
   private OffsetDateTime criadoEm;
 
-  @Column (name ="expirado_em",nullable = false)
+  @Column (name ="expira_em",nullable = false)
   private Integer expiradoEm;  
   
 }
