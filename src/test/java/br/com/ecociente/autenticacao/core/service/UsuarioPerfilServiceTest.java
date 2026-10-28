@@ -70,7 +70,7 @@ class UsuarioPerfilServiceTest {
     @Test
     @DisplayName("Deve retornar USUARIO_COMUM quando tipo não corresponde a nenhum perfil específico")
     void shouldReturnUsuarioComum() {
-      Usuario usuario = criarUsuario("admin");
+      Usuario usuario = criarUsuario("visitante");
 
       PerfilUsuarioType perfil = usuarioPerfilService.perfil(usuario);
 
