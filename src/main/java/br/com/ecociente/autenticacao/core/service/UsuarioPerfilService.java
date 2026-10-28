@@ -1,6 +1,6 @@
 package br.com.ecociente.autenticacao.core.service;
 
-
+import java.text.Normalizer;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -8,26 +8,43 @@ import org.springframework.stereotype.Service;
 import br.com.ecociente.autenticacao.core.domain.PerfilUsuarioType;
 import br.com.ecociente.autenticacao.core.domain.Usuario;
 
-
 @Service
 public class UsuarioPerfilService {
-  public PerfilUsuarioType perfil(Usuario usuario){
-    String tipo = usuario.getTipoUsuario() == null ? "" : normalizar(usuario.getTipoUsuario());
 
-    if (tipo.contains("cooperativa")){
+  public PerfilUsuarioType perfil(Usuario usuario) {
+    String tipo = normalizar(
+        usuario.getTipoUsuario());
+
+    if (tipo.equals("admin")
+        || tipo.equals("administrador")
+        || tipo.equals("administradora")) {
+      return PerfilUsuarioType.ADMIN;
+    }
+
+    if (tipo.contains("cooperativa")) {
       return PerfilUsuarioType.COOPERATIVA;
-    } 
-    else if(tipo.contains("sindico") || tipo.contains("síndico")){
+    }
+
+    if (tipo.contains("sindico")) {
       return PerfilUsuarioType.SINDICO;
-    } 
-    else if (tipo.contains("morador")) {
-       return PerfilUsuarioType.MORADOR;  
     }
+
+    if (tipo.contains("morador")) {
+      return PerfilUsuarioType.MORADOR;
+    }
+
     return PerfilUsuarioType.USUARIO_COMUM;
+  }
+
+  private String normalizar(String valor) {
+    if (valor == null) {
+      return "";
     }
 
-    private String normalizar(String tipoUsuario){
-      return tipoUsuario == null ? "" : tipoUsuario.toLowerCase(Locale.ROOT);
-    }
+    return Normalizer
+        .normalize(valor, Normalizer.Form.NFD)
+        .replaceAll("\\p{M}", "")
+        .trim()
+        .toLowerCase(Locale.ROOT);
+  }
 }
-
